@@ -4,6 +4,7 @@ bwdata contains the BWData class.
 import datetime
 from . import filters
 import logging
+from time import sleep
 
 logger = logging.getLogger("bcr_api")
 
@@ -46,7 +47,7 @@ class BWData:
         return all_mentions
 
     def iter_mentions(
-        self, name=None, startDate=None, max_pages=None, iter_by_page=False, **kwargs
+        self, name=None, startDate=None, max_pages=None, iter_by_page=False, rate_limit=30, **kwargs
     ):
         """
         Same as get_mentions function, but returns an iterator. Fetch one page at a time to reduce memory footprint.
@@ -56,6 +57,7 @@ class BWData:
             startDate:     You must pass in a start date (string).
             max_pages:     Maximum number of pages to retrieve, where each page is 5000 mentions by default - Optional.  If you don't pass max_pages, it will retrieve all mentions that match your request.
             iter_by_page:  Enumerate by page when set to True, else by mention, default to False - Optional.
+            rate_limit:    Calls per 10 minutes, default to 30
             kwargs:        All other filters are optional and can be found in filters.py.
 
         Raises:
@@ -69,6 +71,7 @@ class BWData:
         params["pageSize"] = page_size
         cursor = params.get("cursor", None)
         page_idx = 0
+        sleep_time = 600/rate_limit
 
         while True:
             if cursor:
@@ -92,6 +95,7 @@ class BWData:
                         yield mention
             if len(next_mentions) < page_size or not next_cursor:
                 break
+            sleep(sleep_time)
 
     def num_mentions(self, name=None, startDate=None, **kwargs):
         """
